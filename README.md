@@ -14,8 +14,14 @@ Requires Tesseract 5 on the system (`brew install tesseract`).
 
 ## Layout
 
-- `src/doc_verify/` – package code (data, models, training, evaluation)
-- `sad_syn/` – synthetic offer-letter generator (`generate.py`) and renderer (`render.py`)
+- `src/doc_verify/` – package code (data, models, training, evaluation); `tobacco.py` loads the Tobacco3482 reference scans
+- `sad_syn/` – synthetic offer letters:
+  - `generate.py` – clean/inconsistent offers and rule checks
+  - `render.py` – offer dict → page image
+  - `degrade.py` – scan-like degradation (label-blind, per-document seed)
+  - `ocr.py` – OCR, field checks and confidence
+  - `pipeline.py` – render → degrade → OCR for many letters in parallel
+  - `analysis.py` – accuracy summaries, clean-vs-altered tests, ablations, confidence comparison
 - `fonts/` – font files bundled for rendering
 - `data/raw` – Tobacco3482; `data/sad_syn` – generated SAD-Syn set; `data/processed` – splits + OCR
 - `notebooks/` – exploration and experiments

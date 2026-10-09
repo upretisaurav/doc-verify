@@ -7,6 +7,12 @@ from faker import Faker
 
 fake = Faker(['en_AU', 'en_GB'])
 
+# The university's country decides its address locale and the currency it charges in
+COUNTRIES = {
+    "Australia": {"faker": Faker('en_AU'), "currency": "AUD"},
+    "United Kingdom": {"faker": Faker('en_GB'), "currency": "GBP"},
+}
+
 FIXED_REFERENCE_DATE = datetime.date(2026, 10, 1)
 VALID_FEES = [n * 500 for n in range(30, 91)]
 DEPOSIT_RATES = [0.1, 0.2, 0.25, 0.5]
@@ -15,6 +21,11 @@ DEPOSIT_RATES = [0.1, 0.2, 0.25, 0.5]
 def set_seed(seed=42):
     Faker.seed(seed)
     random.seed(seed)
+
+
+def make_university_name(country):
+    local_fake = COUNTRIES[country]['faker']
+    return random.choice([f"University of {local_fake.city()}", f"{local_fake.last_name()} University"])
 
 
 def make_clean_offer():
@@ -47,7 +58,9 @@ def make_clean_offer():
     else:
         program_title = f"Doctor of Philosophy in {program_subject}"
 
-    univ_name = random.choice([f"University of {fake.city()}", f"{fake.last_name()} University"])
+    country = random.choice(list(COUNTRIES))
+    local_fake = COUNTRIES[country]['faker']
+    univ_name = make_university_name(country)
 
     first_year_fee = random.choice(VALID_FEES)
     total_tuition = round(first_year_fee * duration_years)
@@ -55,7 +68,8 @@ def make_clean_offer():
 
     offer['university_header'] = univ_name
     offer['university_body'] = univ_name
-    offer['contact_info'] = fake.address().replace('\n', ', ')
+    offer['country'] = country
+    offer['contact_info'] = local_fake.address().replace('\n', ', ')
     offer['date_of_issue'] = issue_date
     offer['student_name'] = fake.name()
     offer['applicant_address'] = fake.address().replace('\n', ', ')
@@ -65,19 +79,19 @@ def make_clean_offer():
     offer['degree_level'] = degree_level
     offer['faculty_department'] = random.choice(["Faculty of Engineering", "Faculty of Science", "Faculty of Business", "Faculty of Arts", "Faculty of Computing"])
     offer['study_mode'] = random.choice(["Full-time", "Part-time"])
-    offer['campus_location'] = fake.city() + " Campus"
+    offer['campus_location'] = local_fake.city() + " Campus"
     offer['duration_years'] = duration_years
     offer['orientation_date'] = orientation_date
     offer['commencement_date'] = commencement_date
     offer['completion_date'] = completion_date
-    offer['currency'] = random.choice(["AUD", "GBP"])
+    offer['currency'] = COUNTRIES[country]['currency']
     offer['first_year_tuition_fee'] = first_year_fee
     offer['total_estimated_tuition'] = total_tuition
     offer['acceptance_deposit_header'] = acceptance_deposit
     offer['acceptance_deposit_body'] = acceptance_deposit
     offer['payment_deadline'] = payment_deadline
     offer['conditions'] = random.choice(["None", "Subject to final academic transcripts", "Subject to English proficiency test"])
-    offer['signatory'] = fake.name() + ", Admissions Director"
+    offer['signatory'] = local_fake.name() + ", Admissions Director"
 
     return offer
 
@@ -139,7 +153,7 @@ def make_inconsistent_offer(kind):
 
         new_name = offer['university_body']
         while new_name == offer['university_body']:
-            new_name = random.choice([f"University of {fake.city()}", f"{fake.last_name()} University"])
+            new_name = make_university_name(offer['country'])
 
         offer['university_body'] = new_name
 
@@ -154,3 +168,31 @@ def make_inconsistent_offer(kind):
     offer['inconsistency_type'] = kind
 
     return offer
+
+
+INCONSISTENCY_KINDS = ["altered_date", "altered_amount", "institution_mismatch", "total_mismatch"]
+
+EXPECTED_BROKEN_RULE = {
+    "altered_date": "date_order",
+    "altered_amount": "deposits_match",
+    "institution_mismatch": "university_names_match",
+    "total_mismatch": "total_matches_fee",
+}
+
+
+def make_letters(n):
+    return [
+        make_clean_offer() if i % 2 == 0
+        else make_inconsistent_offer(INCONSISTENCY_KINDS[(i // 2) % len(INCONSISTENCY_KINDS)])
+        for i in range(n)
+    ]
+
+
+def rule_test(n=1000):
+    counts = {'clean': sum(all(check_rules(make_clean_offer()).values()) for _ in range(n))}
+    for kind, expected_rule in EXPECTED_BROKEN_RULE.items():
+        counts[kind] = sum(
+            [name for name, ok in check_rules(make_inconsistent_offer(kind)).items() if not ok] == [expected_rule]
+            for _ in range(n)
+        )
+    return counts
