@@ -30,7 +30,6 @@ def expected_ocr_fields(offer):
 
 def printed_copies(offer):
     fields = expected_ocr_fields(offer)
-    # the payment deadline is printed in the body sentence and again in the fee table
     return Counter(list(fields.values()) + [fields['payment_deadline']])
 
 

@@ -16,6 +16,14 @@ MAX_SPECKS = 600
 
 EFFECTS = ('rotation', 'blur', 'resolution', 'noise', 'stroke', 'threshold', 'specks')
 
+STRENGTH_MIXTURE = [(1, 0.7, 1.2)]
+
+
+def draw_strength(seed, mixture=STRENGTH_MIXTURE):
+    rng = random.Random(f"strength:{seed}")
+    _, low, high = rng.choices(mixture, weights=[w for w, _, _ in mixture])[0]
+    return rng.uniform(low, high)
+
 
 def degrade(img, strength, seed, effects=EFFECTS):
     img = img.convert('L')

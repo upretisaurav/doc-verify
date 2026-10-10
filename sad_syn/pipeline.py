@@ -4,7 +4,7 @@ from itertools import repeat
 
 import pandas as pd
 
-from sad_syn.degrade import EFFECTS, degrade
+from sad_syn.degrade import EFFECTS, STRENGTH_MIXTURE, degrade, draw_strength
 from sad_syn.ocr import check_ocr, count_ocr_reads, mean_confidence, ocr_page, ocr_pool
 from sad_syn.render import render_offer
 
@@ -37,13 +37,23 @@ def ocr_letter(offer, template, strength, seed, effects=EFFECTS):
     }
 
 
-def run_ocr(offers, template, strengths, effects=EFFECTS, seeds=None, max_workers=None):
-    seeds = default_seeds(len(offers)) if seeds is None else seeds
-    jobs = [(offer, strength, seed) for strength in strengths for offer, seed in zip(offers, seeds)]
-    job_offers, job_strengths, job_seeds = zip(*jobs)
+def _run_jobs(job_offers, template, job_strengths, job_seeds, effects, max_workers):
     with ocr_pool(max_workers) as pool:
         rows = list(pool.map(ocr_letter, job_offers, repeat(template), job_strengths, job_seeds, repeat(effects)))
     results = pd.DataFrame(rows)
     results['altered_value_ocr_ok'] = results['altered_value_ocr_ok'].astype('boolean')
     results['accuracy'] = results['copies_read'] / results['copies_total']
     return results
+
+
+def run_ocr(offers, template, strengths, effects=EFFECTS, seeds=None, max_workers=None):
+    seeds = default_seeds(len(offers)) if seeds is None else seeds
+    jobs = [(offer, strength, seed) for strength in strengths for offer, seed in zip(offers, seeds)]
+    job_offers, job_strengths, job_seeds = zip(*jobs)
+    return _run_jobs(job_offers, template, job_strengths, job_seeds, effects, max_workers)
+
+
+def run_ocr_sampled(offers, template, mixture=STRENGTH_MIXTURE, effects=EFFECTS, seeds=None, max_workers=None):
+    seeds = default_seeds(len(offers)) if seeds is None else seeds
+    strengths = [draw_strength(seed, mixture) for seed in seeds]
+    return _run_jobs(offers, template, strengths, seeds, effects, max_workers)

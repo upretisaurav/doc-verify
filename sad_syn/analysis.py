@@ -80,3 +80,13 @@ def compare_confidence(results, reference, reference_name='reference'):
     for strength, group in results.groupby('strength'):
         comparison[f'sad-syn {strength}'] = confidence_profile(group['mean_confidence'], reference)
     return pd.DataFrame(comparison).T
+
+
+def compare_candidates(results_by_name, reference, reference_name='reference'):
+    comparison = {reference_name: confidence_profile(reference, reference)}
+    for name, results in results_by_name.items():
+        profile = confidence_profile(results['mean_confidence'], reference)
+        profile['ocr_accuracy'] = results['copies_read'].sum() / results['copies_total'].sum()
+        profile['mean_strength'] = results['strength'].mean()
+        comparison[name] = profile
+    return pd.DataFrame(comparison).T

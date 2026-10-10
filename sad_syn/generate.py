@@ -7,7 +7,6 @@ from faker import Faker
 
 fake = Faker(['en_AU', 'en_GB'])
 
-# The university's country decides its address locale and the currency it charges in
 COUNTRIES = {
     "Australia": {"faker": Faker('en_AU'), "currency": "AUD"},
     "United Kingdom": {"faker": Faker('en_GB'), "currency": "GBP"},
