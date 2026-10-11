@@ -1,6 +1,7 @@
 """Build the SAD-Syn dataset: paired clean/altered letters, degraded, OCR'd and recorded in a manifest."""
 
 import random
+from itertools import repeat
 from pathlib import Path
 
 import pandas as pd
@@ -14,7 +15,7 @@ from sad_syn.generate import (
     make_inconsistent_offer,
     set_seed,
 )
-from sad_syn.ocr import check_ocr, count_ocr_reads, mean_confidence, ocr_page
+from sad_syn.ocr import check_ocr, count_ocr_reads, mean_confidence, ocr_page, ocr_pool
 from sad_syn.pipeline import DEGRADE_SEED
 from sad_syn.render import render_offer
 
@@ -83,7 +84,7 @@ def build_document(offer, template, seed, image_path):
     }
 
 
-def build_dataset(n_pairs, template, out_dir, seed=42):
+def build_dataset(n_pairs, template, out_dir, seed=42, max_workers=None):
     """
     Make pairs, give pair k the seed DEGRADE_SEED + k, assign a split, build the documents, and save the manifest.
     Return the manifest DataFrame.
@@ -92,9 +93,13 @@ def build_dataset(n_pairs, template, out_dir, seed=42):
 
     out_dir = Path(out_dir)
     images_dir = out_dir / "images"
-    rows = []
 
     pairs = make_pairs(n_pairs)
+
+    job_offers = []
+    job_seeds = []
+    job_image_paths = []
+    job_meta = []
 
     for k, (clean_offer, altered_offer) in enumerate(pairs):
         pair_seed = DEGRADE_SEED + k
@@ -103,14 +108,21 @@ def build_dataset(n_pairs, template, out_dir, seed=42):
         clean_path = images_dir / split / f"pair_{k:05d}_clean.png"
         altered_path = images_dir / split / f"pair_{k:05d}_altered.png"
 
-        clean_row = build_document(clean_offer, template, pair_seed, clean_path)
-        altered_row = build_document(altered_offer, template, pair_seed, altered_path)
+        job_offers.append(clean_offer)
+        job_seeds.append(pair_seed)
+        job_image_paths.append(clean_path)
+        job_meta.append({"pair_id": k, "split": split})
 
-        clean_row.update({"pair_id": k, "split": split})
-        altered_row.update({"pair_id": k, "split": split})
+        job_offers.append(altered_offer)
+        job_seeds.append(pair_seed)
+        job_image_paths.append(altered_path)
+        job_meta.append({"pair_id": k, "split": split})
 
-        rows.append(clean_row)
-        rows.append(altered_row)
+    with ocr_pool(max_workers) as pool:
+        rows = list(pool.map(build_document, job_offers, repeat(template), job_seeds, job_image_paths))
+
+    for row, meta in zip(rows, job_meta):
+        row.update(meta)
 
     manifest = pd.DataFrame(rows)
     out_dir.mkdir(parents=True, exist_ok=True)
