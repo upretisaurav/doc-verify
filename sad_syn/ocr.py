@@ -8,42 +8,35 @@ from itertools import islice
 
 import pytesseract
 
-from sad_syn.render import format_currency, format_date
+from sad_syn.doc_types import DOC_TYPES
 
 
-def expected_ocr_fields(offer):
-    currency = offer['currency']
-    return {
-        'university_header': offer['university_header'],
-        'university_body': offer['university_body'],
-        'acceptance_deposit_header': format_currency(offer['acceptance_deposit_header'], currency),
-        'acceptance_deposit_body': format_currency(offer['acceptance_deposit_body'], currency),
-        'first_year_tuition_fee': format_currency(offer['first_year_tuition_fee'], currency),
-        'total_estimated_tuition': format_currency(offer['total_estimated_tuition'], currency),
-        'date_of_issue': format_date(offer['date_of_issue']),
-        'payment_deadline': format_date(offer['payment_deadline']),
-        'orientation_date': format_date(offer['orientation_date']),
-        'commencement_date': format_date(offer['commencement_date']),
-        'completion_date': format_date(offer['completion_date']),
-    }
+def expected_ocr_fields(doc, template):
+    return DOC_TYPES[doc['doc_type']].ocr_fields(doc, template)
 
 
-def printed_copies(offer):
-    fields = expected_ocr_fields(offer)
-    return Counter(list(fields.values()) + [fields['payment_deadline']])
+def printed_copies(doc, template):
+    fields = expected_ocr_fields(doc, template)
+    twice = [fields[field] for field in DOC_TYPES[doc['doc_type']].printed_twice]
+    return Counter(list(fields.values()) + twice)
 
 
-def check_ocr(offer, ocr_text):
-    text = ' '.join(ocr_text.split())
-    copies = printed_copies(offer)
-    return {field: value for field, value in expected_ocr_fields(offer).items()
-            if text.count(value) < copies[value]}
+def squash(text):
+    # OCR often splits one value into two words ("A$38, 500"), so values are matched with all whitespace removed
+    return ''.join(text.split())
 
 
-def count_ocr_reads(offer, ocr_text):
-    text = ' '.join(ocr_text.split())
-    copies = printed_copies(offer)
-    read = sum(min(text.count(value), n) for value, n in copies.items())
+def check_ocr(doc, ocr_text, template):
+    text = squash(ocr_text)
+    copies = printed_copies(doc, template)
+    return {field: value for field, value in expected_ocr_fields(doc, template).items()
+            if text.count(squash(value)) < copies[value]}
+
+
+def count_ocr_reads(doc, ocr_text, template):
+    text = squash(ocr_text)
+    copies = printed_copies(doc, template)
+    read = sum(min(text.count(squash(value)), n) for value, n in copies.items())
     return read, sum(copies.values())
 
 

@@ -1,162 +1,127 @@
-"""Render offer dicts from sad_syn.generate into document images."""
+"""Offer letters: templates, renderer and the values OCR should find on the page."""
 
-from pathlib import Path
+from sad_syn.layout import Page, format_currency, format_date, format_duration
 
-from PIL import Image, ImageDraw, ImageFont
+OFFER_TEMPLATES = [
+    {
+        "template_id": "offer_01",
+        "font": "LiberationSans-Regular.ttf",
+        "margin": 150,
+        "header_style": "centered",
+        "fee_layout": "table",
+        "fees_first": False,
+        "line_spacing_factor": 1.4,
+        "font_size_main": 32,
+        "font_size_title": 48,
+        "date_format": "%B %d, %Y",
+    },
+    {
+        "template_id": "offer_02",
+        "font": "LiberationSerif-Regular.ttf",
+        "margin": 170,
+        "header_style": "left",
+        "fee_layout": "list",
+        "fees_first": False,
+        "line_spacing_factor": 1.45,
+        "font_size_main": 33,
+        "font_size_title": 50,
+        "date_format": "%d %B %Y",
+    },
+    {
+        "template_id": "offer_03",
+        "font": "CourierPrime-Regular.ttf",
+        "margin": 140,
+        "header_style": "centered",
+        "fee_layout": "table",
+        "fees_first": True,
+        "line_spacing_factor": 1.4,
+        "font_size_main": 30,
+        "font_size_title": 44,
+        "date_format": "%d/%m/%Y",
+    },
+]
 
-FONTS_DIR = Path(__file__).resolve().parents[1] / "fonts"
+template_01 = OFFER_TEMPLATES[0]
 
-PAGE_WIDTH, PAGE_HEIGHT = 1654, 2339
-
-template_01 = {
-    "template_id": "offer_01",
-    "font": "LiberationSans-Regular.ttf",
-    "margin": 150,
-    "header_style": "centered",
-    "fee_layout": "table",
-    "line_spacing_factor": 1.4,
-    "font_size_main": 32,
-    "font_size_title": 48
-}
+OFFER_PRINTED_TWICE = ('payment_deadline',)
 
 
-def format_currency(amount, currency):
-    symbols = {"USD": "$", "AUD": "A$", "GBP": "£", "CAD": "C$"}
-    sym = symbols.get(currency, currency + " ")
-    return f"{sym}{amount:,}"
-
-
-def format_duration(years):
-    if years == 1.0:
-        return "1 year"
-    elif years.is_integer():
-        return f"{int(years)} years"
-    return f"{years} years"
-
-
-def format_date(d):
-    return d.strftime('%B %d, %Y')
-
-
-def wrap_text(text, font, max_width):
-    words = text.split()
-    lines = []
-    current_line = []
-    for word in words:
-        test_line = ' '.join(current_line + [word])
-        if font.getlength(test_line) <= max_width:
-            current_line.append(word)
-        else:
-            if current_line:
-                lines.append(' '.join(current_line))
-                current_line = [word]
-            else:
-                lines.append(word)
-                current_line = []
-    if current_line:
-        lines.append(' '.join(current_line))
-    return lines
+def offer_ocr_fields(offer, template):
+    currency = offer['currency']
+    return {
+        'university_header': offer['university_header'],
+        'university_body': offer['university_body'],
+        'acceptance_deposit_header': format_currency(offer['acceptance_deposit_header'], currency),
+        'acceptance_deposit_body': format_currency(offer['acceptance_deposit_body'], currency),
+        'first_year_tuition_fee': format_currency(offer['first_year_tuition_fee'], currency),
+        'total_estimated_tuition': format_currency(offer['total_estimated_tuition'], currency),
+        'date_of_issue': format_date(offer['date_of_issue'], template),
+        'payment_deadline': format_date(offer['payment_deadline'], template),
+        'orientation_date': format_date(offer['orientation_date'], template),
+        'commencement_date': format_date(offer['commencement_date'], template),
+        'completion_date': format_date(offer['completion_date'], template),
+    }
 
 
 def render_offer(offer, template, output_filename=None):
-    page_width, page_height = PAGE_WIDTH, PAGE_HEIGHT
-    img = Image.new('RGB', (page_width, page_height), color='white')
-    draw = ImageDraw.Draw(img)
+    page = Page(template)
+    fields = offer_ocr_fields(offer, template)
 
-    font_path = str(FONTS_DIR / template['font'])
-    font_main = ImageFont.truetype(font_path, template['font_size_main'])
-    font_title = ImageFont.truetype(font_path, template['font_size_title'])
+    def draw_body():
+        body_text = (
+            f"We are pleased to offer you admission to {fields['university_body']} "
+            f"in the {offer['program_title']} program.\n\n"
+            f"Faculty: {offer['faculty_department']}\n"
+            f"Study Mode: {offer['study_mode']} at {offer['campus_location']}\n"
+            f"Duration: {format_duration(offer['duration_years'])}\n"
+            f"Orientation: {fields['orientation_date']}\n"
+            f"Commencement: {fields['commencement_date']}\n"
+            f"Completion: {fields['completion_date']}\n\n"
+            f"To accept this offer and secure your enrollment, please pay a deposit "
+            f"of {fields['acceptance_deposit_body']} by {fields['payment_deadline']}."
+        )
+        page.paragraph(body_text)
+        page.blank()
 
-    margin = template['margin']
-    max_text_width = page_width - (margin * 2)
-    y_cursor = margin
+    def draw_fees():
+        page.line("Financial Summary:")
+        page.blank()
 
-    def draw_line(text, font, align="left"):
-        nonlocal y_cursor
-        for line in wrap_text(text, font, max_text_width) or [""]:
-            if align == "centered":
-                x = (page_width - font.getlength(line)) / 2
+        fee_rows = [
+            ("First-Year Tuition:", fields['first_year_tuition_fee']),
+            ("Estimated Total:", fields['total_estimated_tuition']),
+            ("Deposit Required:", fields['acceptance_deposit_header']),
+            ("Payment Deadline:", fields['payment_deadline']),
+        ]
+        for label, value in fee_rows:
+            if template['fee_layout'] == "table":
+                page.row([label, value], [0, 600])
             else:
-                x = margin
+                page.line(f"{label} {value}")
+        page.blank()
 
-            draw.text((x, y_cursor), line, font=font, fill='black')
-            y_cursor += int(font.size * template['line_spacing_factor'])
+    page.header(fields['university_header'], offer['contact_info'])
+    page.blank()
 
-            if y_cursor > (page_height - margin):
-                raise ValueError(f"Page overflow detected at line: '{line[:20]}...'")
+    page.line(f"Date: {fields['date_of_issue']}")
+    page.blank()
+    page.line(offer['applicant_address'])
+    page.line(f"Student ID: {offer['student_id']} | App No: {offer['application_number']}")
+    page.blank()
+    page.line(f"Dear {offer['student_name']},")
+    page.blank()
 
-    def draw_paragraph(text, font):
-        for p in text.split('\n'):
-            draw_line(p, font)
-
-    if template['header_style'] == "centered":
-        draw_line(offer['university_header'], font_title, align="centered")
-        draw_line(offer['contact_info'], font_main, align="centered")
+    if template['fees_first']:
+        draw_fees()
+        draw_body()
     else:
-        draw_line(offer['university_header'], font_title)
-        draw_line(offer['contact_info'], font_main)
+        draw_body()
+        draw_fees()
 
-    draw_line("", font_main)
+    page.line(f"Conditions: {offer['conditions']}")
+    page.blank()
+    page.line("Sincerely,")
+    page.blank()
+    page.line(offer['signatory'])
 
-    draw_line(f"Date: {format_date(offer['date_of_issue'])}", font_main)
-    draw_line("", font_main)
-    draw_line(offer['applicant_address'], font_main)
-    draw_line(f"Student ID: {offer['student_id']} | App No: {offer['application_number']}", font_main)
-    draw_line("", font_main)
-    draw_line(f"Dear {offer['student_name']},", font_main)
-    draw_line("", font_main)
-
-    duration_str = format_duration(offer['duration_years'])
-
-    deposit_body_str = format_currency(offer['acceptance_deposit_body'], offer['currency'])
-
-    body_text = (
-        f"We are pleased to offer you admission to {offer['university_body']} "
-        f"in the {offer['program_title']} program.\n\n"
-        f"Faculty: {offer['faculty_department']}\n"
-        f"Study Mode: {offer['study_mode']} at {offer['campus_location']}\n"
-        f"Duration: {duration_str}\n"
-        f"Orientation: {format_date(offer['orientation_date'])}\n"
-        f"Commencement: {format_date(offer['commencement_date'])}\n"
-        f"Completion: {format_date(offer['completion_date'])}\n\n"
-        f"To accept this offer and secure your enrollment, please pay a deposit "
-        f"of {deposit_body_str} by {format_date(offer['payment_deadline'])}."
-    )
-    draw_paragraph(body_text, font_main)
-
-    draw_line("", font_main)
-
-    draw_line("Financial Summary:", font_main)
-    draw_line("", font_main)
-
-    if template['fee_layout'] == "table":
-        def draw_table_row(col1, col2):
-            nonlocal y_cursor
-            draw.text((margin, y_cursor), col1, font=font_main, fill='black')
-            draw.text((margin + 600, y_cursor), col2, font=font_main, fill='black')
-            y_cursor += int(font_main.size * template['line_spacing_factor'])
-            if y_cursor > (page_height - margin):
-                raise ValueError("Page overflow detected in table layout.")
-
-        deposit_header_str = format_currency(offer['acceptance_deposit_header'], offer['currency'])
-        first_year_str = format_currency(offer['first_year_tuition_fee'], offer['currency'])
-        total_str = format_currency(offer['total_estimated_tuition'], offer['currency'])
-
-        draw_table_row("First-Year Tuition:", first_year_str)
-        draw_table_row("Estimated Total:", total_str)
-        draw_table_row("Deposit Required:", deposit_header_str)
-        draw_table_row("Payment Deadline:", format_date(offer['payment_deadline']))
-
-    draw_line("", font_main)
-
-    draw_line(f"Conditions: {offer['conditions']}", font_main)
-    draw_line("", font_main)
-    draw_line("Sincerely,", font_main)
-    draw_line("", font_main)
-    draw_line(offer['signatory'], font_main)
-
-    if output_filename is not None:
-        img.save(output_filename)
-        print(f"Saved: {output_filename}")
-
-    return img
+    return page.finish(output_filename)

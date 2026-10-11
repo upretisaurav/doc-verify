@@ -5,8 +5,8 @@ from itertools import repeat
 import pandas as pd
 
 from sad_syn.degrade import EFFECTS, STRENGTH_MIXTURE, degrade, draw_strength
+from sad_syn.doc_types import render_document
 from sad_syn.ocr import check_ocr, count_ocr_reads, mean_confidence, ocr_page, ocr_pool
-from sad_syn.render import render_offer
 
 DEGRADE_SEED = 10_000
 
@@ -21,9 +21,9 @@ def swapped_seeds(n):
 
 
 def ocr_letter(offer, template, strength, seed, effects=EFFECTS):
-    img = degrade(render_offer(offer, template), strength, seed, effects)
+    img = degrade(render_document(offer, template), strength, seed, effects)
     text, confidences = ocr_page(img)
-    read, total = count_ocr_reads(offer, text)
+    read, total = count_ocr_reads(offer, text, template)
     altered_field = offer.get('altered_field')
     return {
         'strength': strength,
@@ -33,7 +33,7 @@ def ocr_letter(offer, template, strength, seed, effects=EFFECTS):
         'copies_read': read,
         'copies_total': total,
         'mean_confidence': mean_confidence(confidences),
-        'altered_value_ocr_ok': None if altered_field is None else altered_field not in check_ocr(offer, text),
+        'altered_value_ocr_ok': None if altered_field is None else altered_field not in check_ocr(offer, text, template),
     }
 
 

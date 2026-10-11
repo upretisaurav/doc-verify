@@ -28,7 +28,7 @@ def make_university_name(country):
 
 
 def make_clean_offer():
-    offer = {}
+    offer = {'doc_type': 'offer_letter'}
 
     start_date_obj = FIXED_REFERENCE_DATE - datetime.timedelta(days=365)
     issue_date = fake.date_between(start_date=start_date_obj, end_date=FIXED_REFERENCE_DATE)
@@ -186,12 +186,3 @@ def make_letters(n):
         for i in range(n)
     ]
 
-
-def rule_test(n=1000):
-    counts = {'clean': sum(all(check_rules(make_clean_offer()).values()) for _ in range(n))}
-    for kind, expected_rule in EXPECTED_BROKEN_RULE.items():
-        counts[kind] = sum(
-            [name for name, ok in check_rules(make_inconsistent_offer(kind)).items() if not ok] == [expected_rule]
-            for _ in range(n)
-        )
-    return counts
