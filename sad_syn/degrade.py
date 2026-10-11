@@ -11,8 +11,12 @@ MAX_BLUR_RADIUS = 1.2
 MAX_RESOLUTION_LOSS = 0.5
 MAX_NOISE_STD = 10.0
 MAX_STROKE_CHANGE = 1.0
+MAX_THINNING = 0.6
 MAX_THRESHOLD_SHIFT = 0.3
 MAX_SPECKS = 600
+
+# a degraded page outside this share of dark pixels is broken (all black, or text erased), not badly scanned
+INK_RANGE = (0.01, 0.40)
 
 EFFECTS = ('rotation', 'blur', 'resolution', 'noise', 'stroke', 'threshold', 'specks')
 
@@ -66,7 +70,8 @@ def degrade(img, strength, seed, effects=EFFECTS):
     if 'stroke' in effects:
         kernel = np.ones((3, 3), np.uint8)
         grown = cv2.erode(pixels, kernel) if stroke_change > 0 else cv2.dilate(pixels, kernel)
-        pixels = pixels + abs(stroke_change) * (grown - pixels)
+        limit = 1.0 if stroke_change > 0 else MAX_THINNING
+        pixels = pixels + min(abs(stroke_change), limit) * (grown - pixels)
 
     pixels = np.clip(pixels, 0, 255).astype(np.uint8)
 
@@ -81,5 +86,10 @@ def degrade(img, strength, seed, effects=EFFECTS):
         sizes = np_rng.integers(1, 3, n_specks)
         for y, x, size in zip(ys, xs, sizes):
             pixels[y:y + size, x:x + size] = 0
+
+    ink = (pixels < 128).mean()
+    if not INK_RANGE[0] <= ink <= INK_RANGE[1]:
+        raise ValueError(f"Degraded page is {ink:.1%} ink (seed {seed}, strength {strength:.2f}); expected "
+                         f"{INK_RANGE[0]:.0%}-{INK_RANGE[1]:.0%}")
 
     return Image.fromarray(pixels).resize(page_size, Image.Resampling.NEAREST)
