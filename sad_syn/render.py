@@ -2,46 +2,19 @@
 
 from sad_syn.layout import Page, format_currency, format_date, format_duration
 
-OFFER_TEMPLATES = [
-    {
-        "template_id": "offer_01",
-        "font": "LiberationSans-Regular.ttf",
-        "margin": 150,
-        "header_style": "centered",
-        "fee_layout": "table",
-        "fees_first": False,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 32,
-        "font_size_title": 48,
-        "date_format": "%B %d, %Y",
-    },
-    {
-        "template_id": "offer_02",
-        "font": "LiberationSerif-Regular.ttf",
-        "margin": 170,
-        "header_style": "left",
-        "fee_layout": "list",
-        "fees_first": False,
-        "line_spacing_factor": 1.45,
-        "font_size_main": 33,
-        "font_size_title": 50,
-        "date_format": "%d %B %Y",
-    },
-    {
-        "template_id": "offer_03",
-        "font": "CourierPrime-Regular.ttf",
-        "margin": 140,
-        "header_style": "centered",
-        "fee_layout": "table",
-        "fees_first": True,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 30,
-        "font_size_title": 44,
-        "date_format": "%d/%m/%Y",
-    },
-]
-
-template_01 = OFFER_TEMPLATES[0]
+# the reference offer-letter layout that the degradation was calibrated on
+template_01 = {
+    "template_id": "offer_01",
+    "font": "LiberationSans-Regular.ttf",
+    "margin": 150,
+    "header_style": "centered",
+    "fee_layout": "table",
+    "fees_first": False,
+    "line_spacing_factor": 1.4,
+    "font_size_main": 32,
+    "font_size_title": 48,
+    "date_format": "%B %d, %Y",
+}
 
 OFFER_PRINTED_TWICE = ('payment_deadline',)
 

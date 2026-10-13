@@ -35,42 +35,6 @@ DEBITS = {
 STATEMENT_PERIOD_DAYS = 30
 TRANSACTION_DATE_FORMAT = "%d %b"
 
-BANK_TEMPLATES = [
-    {
-        "template_id": "bank_01",
-        "font": "CourierPrime-Regular.ttf",
-        "margin": 140,
-        "header_style": "left",
-        "summary_first": True,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 30,
-        "font_size_title": 44,
-        "date_format": "%d/%m/%Y",
-    },
-    {
-        "template_id": "bank_02",
-        "font": "LiberationSans-Regular.ttf",
-        "margin": 150,
-        "header_style": "centered",
-        "summary_first": False,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 32,
-        "font_size_title": 48,
-        "date_format": "%B %d, %Y",
-    },
-    {
-        "template_id": "bank_03",
-        "font": "LiberationSerif-Regular.ttf",
-        "margin": 160,
-        "header_style": "centered",
-        "summary_first": True,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 32,
-        "font_size_title": 50,
-        "date_format": "%d %B %Y",
-    },
-]
-
 BANK_PRINTED_TWICE = ()
 
 BANK_EXPECTED_BROKEN_RULE = {
@@ -248,13 +212,15 @@ def render_statement(doc, template, output_filename=None):
             ("Total debits:", fields['total_debits']),
             ("Closing balance:", fields['closing_balance_summary']),
         ]
-        offsets = page.columns(0, 0.45)
+        offsets = page.columns(0, 0.62)
+        page.line("Account summary")
         for label, value in summary_rows:
             page.row([label, value], offsets)
         page.blank()
 
     def draw_transactions():
         offsets = page.columns(0, 0.14, 0.62, 0.81)
+        page.line("Transactions")
         page.row(["Date", "Description", "Debit", "Credit"], offsets)
         for transaction in doc['transactions']:
             page.row(
@@ -270,7 +236,7 @@ def render_statement(doc, template, output_filename=None):
 
     page.header(fields['bank_header'], doc['contact_info'])
     page.blank()
-    page.line("Account Statement")
+    page.line("Account Statement", align=template['title_align'])
     page.blank()
 
     page.line(doc['account_holder'])

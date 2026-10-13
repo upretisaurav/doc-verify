@@ -42,42 +42,6 @@ PROGRAMS = {
 COURSE_CREDITS = [3, 3, 6]
 GRADE_BANDS = [(85, "HD"), (75, "D"), (65, "C"), (50, "P")]
 
-TRANSCRIPT_TEMPLATES = [
-    {
-        "template_id": "transcript_01",
-        "font": "LiberationSerif-Regular.ttf",
-        "margin": 160,
-        "header_style": "centered",
-        "summary_first": False,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 32,
-        "font_size_title": 50,
-        "date_format": "%d %B %Y",
-    },
-    {
-        "template_id": "transcript_02",
-        "font": "CourierPrime-Regular.ttf",
-        "margin": 140,
-        "header_style": "left",
-        "summary_first": True,
-        "line_spacing_factor": 1.4,
-        "font_size_main": 30,
-        "font_size_title": 44,
-        "date_format": "%d/%m/%Y",
-    },
-    {
-        "template_id": "transcript_03",
-        "font": "LiberationSans-Regular.ttf",
-        "margin": 150,
-        "header_style": "left",
-        "summary_first": False,
-        "line_spacing_factor": 1.35,
-        "font_size_main": 31,
-        "font_size_title": 46,
-        "date_format": "%B %d, %Y",
-    },
-]
-
 TRANSCRIPT_PRINTED_TWICE = ()
 
 TRANSCRIPT_EXPECTED_BROKEN_RULE = {
@@ -262,7 +226,7 @@ def render_transcript(doc, template, output_filename=None):
 
     page.header(fields['university_header'], doc['contact_info'])
     page.blank()
-    page.line("Official Academic Transcript")
+    page.line("Official Academic Transcript", align=template['title_align'])
     page.blank()
 
     page.line(f"Student: {doc['student_name']}")

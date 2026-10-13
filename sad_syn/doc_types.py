@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from sad_syn.bank_statement import (
     BANK_EXPECTED_BROKEN_RULE,
     BANK_PRINTED_TWICE,
-    BANK_TEMPLATES,
     check_statement_rules,
     make_clean_statement,
     make_inconsistent_statement,
@@ -19,11 +18,11 @@ from sad_syn.generate import (
     make_clean_offer,
     make_inconsistent_offer,
 )
-from sad_syn.render import OFFER_PRINTED_TWICE, OFFER_TEMPLATES, offer_ocr_fields, render_offer
+from sad_syn.render import OFFER_PRINTED_TWICE, offer_ocr_fields, render_offer
+from sad_syn.templates import make_templates
 from sad_syn.transcript import (
     TRANSCRIPT_EXPECTED_BROKEN_RULE,
     TRANSCRIPT_PRINTED_TWICE,
-    TRANSCRIPT_TEMPLATES,
     check_transcript_rules,
     make_clean_transcript,
     make_inconsistent_transcript,
@@ -47,15 +46,15 @@ class DocType:
 DOC_TYPES = {
     'offer_letter': DocType(
         make_clean_offer, make_inconsistent_offer, check_rules, render_offer,
-        offer_ocr_fields, OFFER_PRINTED_TWICE, OFFER_TEMPLATES, EXPECTED_BROKEN_RULE,
+        offer_ocr_fields, OFFER_PRINTED_TWICE, make_templates('offer_letter'), EXPECTED_BROKEN_RULE,
     ),
     'transcript': DocType(
         make_clean_transcript, make_inconsistent_transcript, check_transcript_rules, render_transcript,
-        transcript_ocr_fields, TRANSCRIPT_PRINTED_TWICE, TRANSCRIPT_TEMPLATES, TRANSCRIPT_EXPECTED_BROKEN_RULE,
+        transcript_ocr_fields, TRANSCRIPT_PRINTED_TWICE, make_templates('transcript'), TRANSCRIPT_EXPECTED_BROKEN_RULE,
     ),
     'bank_statement': DocType(
         make_clean_statement, make_inconsistent_statement, check_statement_rules, render_statement,
-        statement_ocr_fields, BANK_PRINTED_TWICE, BANK_TEMPLATES, BANK_EXPECTED_BROKEN_RULE,
+        statement_ocr_fields, BANK_PRINTED_TWICE, make_templates('bank_statement'), BANK_EXPECTED_BROKEN_RULE,
     ),
 }
 

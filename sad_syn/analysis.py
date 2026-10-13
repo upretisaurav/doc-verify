@@ -5,7 +5,9 @@ from scipy import stats
 from statsmodels.stats.proportion import proportions_ztest
 
 from sad_syn.degrade import EFFECTS
-from sad_syn.pipeline import run_ocr
+from sad_syn.doc_types import DOC_TYPES
+from sad_syn.generate import INCONSISTENCY_KINDS, set_seed
+from sad_syn.pipeline import run_ocr, run_ocr_sampled
 
 CONFIDENCE_QUANTILES = [0.1, 0.25, 0.5, 0.75, 0.9]
 
@@ -90,3 +92,28 @@ def compare_candidates(results_by_name, reference, reference_name='reference'):
         profile['mean_strength'] = results['strength'].mean()
         comparison[name] = profile
     return pd.DataFrame(comparison).T
+
+
+def font_test(fonts, n=40, seed=21):
+    """
+    For each font, render the same n documents of every type in the same layout and report, per document type,
+    the share of clean pages read in full and the OCR accuracy under the frozen degradation.
+    """
+    rows = []
+    for font in fonts:
+        row = {'font': font}
+        for doc_type, kind in DOC_TYPES.items():
+            set_seed(seed)
+            docs = [
+                kind.make_clean() if i % 2 == 0 else kind.make_inconsistent(INCONSISTENCY_KINDS[(i // 2) % 4])
+                for i in range(n)
+            ]
+            template = {**kind.templates[0], 'font': font, 'font_size_main': 32, 'font_size_title': 48,
+                        'margin': 150, 'line_spacing_factor': 1.4}
+
+            clean = run_ocr(docs, template, [0])
+            degraded = run_ocr_sampled(docs, template)
+            row[f'{doc_type} clean'] = (clean['copies_read'] == clean['copies_total']).mean()
+            row[f'{doc_type} degraded'] = degraded['copies_read'].sum() / degraded['copies_total'].sum()
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('font')

@@ -15,7 +15,7 @@ MAX_THINNING = 0.6
 MAX_THRESHOLD_SHIFT = 0.3
 MAX_SPECKS = 600
 
-# a degraded page outside this share of dark pixels is broken (all black, or text erased), not badly scanned
+# a black-and-white page outside this share of black pixels is broken (all black, or text erased), not badly scanned
 INK_RANGE = (0.01, 0.40)
 
 EFFECTS = ('rotation', 'blur', 'resolution', 'noise', 'stroke', 'threshold', 'specks')
@@ -87,9 +87,10 @@ def degrade(img, strength, seed, effects=EFFECTS):
         for y, x, size in zip(ys, xs, sizes):
             pixels[y:y + size, x:x + size] = 0
 
-    ink = (pixels < 128).mean()
-    if not INK_RANGE[0] <= ink <= INK_RANGE[1]:
-        raise ValueError(f"Degraded page is {ink:.1%} ink (seed {seed}, strength {strength:.2f}); expected "
-                         f"{INK_RANGE[0]:.0%}-{INK_RANGE[1]:.0%}")
+    if 'threshold' in effects:
+        ink = (pixels == 0).mean()
+        if not INK_RANGE[0] <= ink <= INK_RANGE[1]:
+            raise ValueError(f"Degraded page is {ink:.1%} ink (seed {seed}, strength {strength:.2f}); expected "
+                             f"{INK_RANGE[0]:.0%}-{INK_RANGE[1]:.0%}")
 
     return Image.fromarray(pixels).resize(page_size, Image.Resampling.NEAREST)
