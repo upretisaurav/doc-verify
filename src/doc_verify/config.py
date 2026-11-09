@@ -13,6 +13,9 @@ SPLIT = (0.70, 0.15, 0.15)
 SEED = 42
 BATCH_SIZE = 32
 
+# test-set results are only allowed once every modelling choice is frozen; flip this deliberately, once
+TEST_SET_UNLOCKED = False
+
 # every dataset manifest (SAD-Syn and Tobacco3482) has exactly these columns; a column that does not apply is empty
 MANIFEST_COLUMNS = [
     "source", "doc_type", "split", "label", "inconsistency_type", "altered_field", "altered_value_ocr_ok",

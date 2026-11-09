@@ -18,6 +18,12 @@ Requires Tesseract 5 on the system (`brew install tesseract`).
   - `config.py` – paths, split, seed and the shared `MANIFEST_COLUMNS`
   - `tobacco.py` – Tobacco3482: 200 DPI pages, OCR, stratified 70/15/15 split, manifest
   - `text_length.py` – OCR text length in CLIP tokens and where the evidence for a planted mistake falls
+  - `windows.py` – overlapping CLIP token windows (75 tokens, stride 50, 8 windows) and the frozen CLIP text-feature cache
+  - `data.py` – combined Tobacco + SAD-Syn page table with masked labels (type / authenticity / kind), test-set lock
+  - `models.py` – fused ViT-B/16 + CLIP-text cross-attention model, image-only ViT and ResNet18 baselines
+  - `train.py` – masked multi-task loss, AdamW, early stopping on validation
+  - `evaluate.py` – type accuracy/macro-F1, authenticity AUC, kind macro-F1
+  - `baselines.py`, `rule_checker.py` – TF-IDF + logistic regression, CLIP zero-shot, rule-based checker on OCR values
 - `sad_syn/` – synthetic study-abroad documents (offer letters, transcripts, bank statements; 20 generated templates each, split 14/3/3 by template):
   - `generate.py` – offer letters: clean/inconsistent offers and rule checks
   - `render.py` – offer letters: templates, renderer, OCR values
@@ -32,9 +38,14 @@ Requires Tesseract 5 on the system (`brew install tesseract`).
   - `dataset.py` – paired clean/altered dataset build: images, OCR text and `manifest.csv`
 - `fonts/` – bundled fonts and their licences; only fonts that passed the OCR font test are used by templates
 - `data/raw` – Tobacco3482 download; `data/sad_syn` – generated SAD-Syn set; `data/processed/tobacco3482` – Tobacco pages, OCR text and manifest (all git-ignored)
-- `notebooks/` – exploration and experiments
+- `notebooks/` – exploration and experiments:
+  - `offer_letter_date_setup.ipynb` – SAD-Syn generator, degradation calibration and dataset checks
+  - `tobacco_and_text.ipynb` – Tobacco summary, OCR length in CLIP tokens, evidence positions
+  - `baselines_val.ipynb` – TF-IDF, rule checker and CLIP zero-shot on validation
+  - `colab_train.ipynb` – text-feature cache and the four training runs on a Colab T4
 - `models/` – checkpoints (git-ignored)
 - `reports/figures/` – confusion matrices, plots
 - `scripts/` – CLI entry points:
   - `uv run python scripts/build_sad_syn.py` – build SAD-Syn (3,000 images)
   - `uv run python scripts/build_tobacco.py` – OCR and split Tobacco3482 (3,482 pages)
+  - `uv run python scripts/prepare_colab.py` – pack 224×224 pages, OCR text, manifests and training code for Colab
