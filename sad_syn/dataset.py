@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 from PIL import Image
 
+from doc_verify.config import MANIFEST_COLUMNS
 from sad_syn.degrade import degrade, draw_strength
 from sad_syn.doc_types import DOC_TYPES, render_document
 from sad_syn.generate import INCONSISTENCY_KINDS, set_seed
@@ -44,12 +45,13 @@ def build_document(doc, template, seed, image_path):
 
     saved_img = Image.open(image_path)
     text, confidences = ocr_page(saved_img)
-    image_path.with_suffix(".txt").write_text(text)
+    image_path.with_suffix(".txt").write_text(text, encoding="utf-8")
 
     read, total = count_ocr_reads(doc, text, template)
     altered_field = doc.get("altered_field")
 
     return {
+        "source": "sad_syn",
         "doc_type": doc["doc_type"],
         "template": template["template_id"],
         "strength": strength,
@@ -64,28 +66,20 @@ def build_document(doc, template, seed, image_path):
     }
 
 
-def build_dataset(n_pairs, out_dir, seed=42, max_workers=None):
+def plan_documents(n_pairs, seed=42):
     """
-    Make the same number of pairs for every template of every document type. Templates are split 70/15/15 within
-    each type, so no template is shared across splits, and a pair always stays inside one template.
-    Pair k gets the seed DEGRADE_SEED + k. Save the images, the OCR text and the manifest.
-    Return the manifest DataFrame.
+    Generate every document of the dataset in build order, without rendering anything.
+    Return a list of jobs: dicts with doc, template, seed, pair_id, split and image_path (relative).
+    The same n_pairs and seed always give the same plan, so analyses can recover the exact documents.
     """
     n_templates = sum(len(kind.templates) for kind in DOC_TYPES.values())
     if n_pairs % n_templates:
         raise ValueError(f"n_pairs must be a multiple of {n_templates} so every template gets the same number of pairs")
 
     set_seed(seed)
-
-    out_dir = Path(out_dir)
     pairs_per_template = n_pairs // n_templates
 
-    job_docs = []
-    job_templates = []
-    job_seeds = []
-    job_image_paths = []
-    job_meta = []
-
+    jobs = []
     k = 0
     for doc_type, kind in DOC_TYPES.items():
         by_split = split_templates(doc_type, kind.templates)
@@ -93,31 +87,48 @@ def build_dataset(n_pairs, out_dir, seed=42, max_workers=None):
         for split in SPLITS:
             for template in by_split[split]:
                 for clean_doc, altered_doc in make_pairs(doc_type, pairs_per_template):
-                    pair_seed = DEGRADE_SEED + k
-
                     for label, doc in (("clean", clean_doc), ("altered", altered_doc)):
-                        image_path = Path("images") / split / f"{template['template_id']}_{k:05d}_{label}.png"
-
-                        job_docs.append(doc)
-                        job_templates.append(template)
-                        job_seeds.append(pair_seed)
-                        job_image_paths.append(out_dir / image_path)
-                        job_meta.append({
+                        jobs.append({
+                            "doc": doc,
+                            "template": template,
+                            "seed": DEGRADE_SEED + k,
                             "pair_id": k,
                             "split": split,
-                            "image_path": str(image_path),
-                            "text_path": str(image_path.with_suffix(".txt")),
+                            "image_path": Path("images") / split / f"{template['template_id']}_{k:05d}_{label}.png",
                         })
-
                     k += 1
 
+    return jobs
+
+
+def build_dataset(n_pairs, out_dir, seed=42, max_workers=None):
+    """
+    Make the same number of pairs for every template of every document type. Templates are split 70/15/15 within
+    each type, so no template is shared across splits, and a pair always stays inside one template.
+    Pair k gets the seed DEGRADE_SEED + k. Save the images, the OCR text and the manifest.
+    Return the manifest DataFrame.
+    """
+    out_dir = Path(out_dir)
+    jobs = plan_documents(n_pairs, seed)
+
     with ocr_pool(max_workers) as pool:
-        rows = list(pool.map(build_document, job_docs, job_templates, job_seeds, job_image_paths))
+        rows = list(pool.map(
+            build_document,
+            [job["doc"] for job in jobs],
+            [job["template"] for job in jobs],
+            [job["seed"] for job in jobs],
+            [out_dir / job["image_path"] for job in jobs],
+        ))
 
-    for row, meta in zip(rows, job_meta):
-        row.update(meta)
+    for row, job in zip(rows, jobs):
+        row.update({
+            "pair_id": job["pair_id"],
+            "split": job["split"],
+            "image_path": str(job["image_path"]),
+            "text_path": str(job["image_path"].with_suffix(".txt")),
+        })
 
-    manifest = pd.DataFrame(rows)
+    manifest = pd.DataFrame(rows)[MANIFEST_COLUMNS]
     out_dir.mkdir(parents=True, exist_ok=True)
     manifest.to_csv(out_dir / "manifest.csv", index=False)
     return manifest
