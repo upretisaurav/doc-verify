@@ -145,7 +145,7 @@ def train(config, out_dir, data_root=None, text_cache=None, pages=None, device=N
             scaler.step(optimizer)
             scaler.update()
             for name, value in losses.items():
-                sums[name] = sums.get(name, 0.0) + float(value)
+                sums[name] = sums.get(name, 0.0) + value.item()
         scheduler.step()
 
         predictions = predict(model, loaders['val'], device)
