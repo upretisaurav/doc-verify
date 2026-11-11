@@ -92,6 +92,15 @@ def predict(model, loader, device):
     return pd.concat(rows, ignore_index=True)
 
 
+def run_pages(pages, config):
+    """The pages a run uses: Tobacco only without the authenticity/kind losses, SAD-Syn only without the type loss."""
+    if not config.lambda_auth and not config.lambda_kind:
+        pages = pages[pages.type_label != MISSING]
+    if not config.use_type:
+        pages = pages[pages.type_label == MISSING]
+    return pages
+
+
 def train(config, out_dir, data_root=None, text_cache=None, pages=None, device=None):
     """
     Train one model and keep the epoch with the best validation selection score.
@@ -105,11 +114,7 @@ def train(config, out_dir, data_root=None, text_cache=None, pages=None, device=N
     np.random.seed(config.seed)
     torch.manual_seed(config.seed)
 
-    pages = load_pages(('train', 'val'), data_root) if pages is None else pages
-    if not config.lambda_auth and not config.lambda_kind:
-        pages = pages[pages.type_label != MISSING]
-    if not config.use_type:
-        pages = pages[pages.type_label == MISSING]
+    pages = run_pages(load_pages(('train', 'val'), data_root) if pages is None else pages, config)
 
     uses_text = config.model == 'fused'
     datasets = {split: PageDataset(pages[pages.split == split], data_root, text_cache if uses_text else None)
@@ -168,3 +173,20 @@ def train(config, out_dir, data_root=None, text_cache=None, pages=None, device=N
 
     (out_dir / 'best_metrics.json').write_text(json.dumps(best, indent=2))
     return best
+
+
+def predict_run(run_dir, split, data_root=None, text_cache=None, device=None):
+    """
+    Predictions of a finished run's best checkpoint on one split, with the run's own config and page filter.
+    The test split can only be read once TEST_SET_UNLOCKED is set.
+    """
+    run_dir = Path(run_dir)
+    config = TrainConfig(**json.loads((run_dir / 'config.json').read_text()))
+    device = device or pick_device()
+
+    pages = run_pages(load_pages((split,), data_root), config)
+    model = MODELS[config.model](pretrained=False).to(device)
+    model.load_state_dict(torch.load(run_dir / 'best.pt', map_location=device))
+    dataset = PageDataset(pages, data_root, text_cache if config.model == 'fused' else None)
+    loader = DataLoader(dataset, batch_size=config.batch_size, num_workers=config.num_workers)
+    return predict(model, loader, device)

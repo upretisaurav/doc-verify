@@ -14,7 +14,8 @@ SEED = 42
 BATCH_SIZE = 32
 
 # test-set results are only allowed once every modelling choice is frozen; flip this deliberately, once
-TEST_SET_UNLOCKED = False
+# unlocked after the frozen plan was committed (reports/test_plan.md, commit 0f6f8ed)
+TEST_SET_UNLOCKED = True
 
 # every dataset manifest (SAD-Syn and Tobacco3482) has exactly these columns; a column that does not apply is empty
 MANIFEST_COLUMNS = [

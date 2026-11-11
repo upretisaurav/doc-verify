@@ -43,9 +43,10 @@ Requires Tesseract 5 on the system (`brew install tesseract`).
   - `offer_letter_date_setup.ipynb` – SAD-Syn generator, degradation calibration and dataset checks
   - `tobacco_and_text.ipynb` – Tobacco summary, OCR length in CLIP tokens, evidence positions
   - `baselines_val.ipynb` – TF-IDF, rule checker and CLIP zero-shot on validation
-  - `colab_train.ipynb` – text-feature cache and the four training runs on a Colab T4
+  - `colab_train.ipynb` – text-feature cache, the training runs, pre-test checks and test predictions on a Colab T4
+  - `test_results.ipynb` – the frozen test evaluation (`reports/test_plan.md`): type, authenticity, breakdowns, McNemar
 - `models/` – checkpoints (git-ignored)
-- `reports/figures/` – confusion matrices, plots
+- `reports/` – `test_plan.md` and `val_thresholds.json` (frozen before the test split was opened), test result tables; `figures/` – confusion matrices, plots
 - `scripts/` – CLI entry points:
   - `uv run python scripts/build_sad_syn.py` – build SAD-Syn (3,000 images)
   - `uv run python scripts/build_tobacco.py` – OCR and split Tobacco3482 (3,482 pages)
