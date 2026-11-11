@@ -22,7 +22,8 @@ Requires Tesseract 5 on the system (`brew install tesseract`).
   - `data.py` – combined Tobacco + SAD-Syn page table with masked labels (type / authenticity / kind), test-set lock
   - `models.py` – fused ViT-B/16 + CLIP-text cross-attention model, image-only ViT and ResNet18 baselines
   - `train.py` – masked multi-task loss, AdamW, early stopping on validation
-  - `evaluate.py` – type accuracy/macro-F1, authenticity AUC, kind macro-F1
+  - `evaluate.py` – type accuracy/macro-F1, authenticity AUC, kind macro-F1; planned breakdowns (AUC by kind / document type / evidence readability with pair-bootstrap intervals), thresholds, confusion matrix, McNemar
+  - `checks.py` – pre-test sanity checks: labels vs generated documents, evidence inside the text windows, text-cache alignment
   - `baselines.py`, `rule_checker.py` – TF-IDF + logistic regression, CLIP zero-shot, rule-based checker on OCR values
 - `sad_syn/` – synthetic study-abroad documents (offer letters, transcripts, bank statements; 20 generated templates each, split 14/3/3 by template):
   - `generate.py` – offer letters: clean/inconsistent offers and rule checks

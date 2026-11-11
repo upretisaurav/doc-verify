@@ -15,7 +15,7 @@ from doc_verify.data import SOURCES, load_image, source_dir
 BUNDLE = DATA_DIR / "colab" / "doc_verify_bundle"
 
 # only the training-side modules: they need torch/timm/transformers, not Faker or Tesseract
-CODE = ["__init__.py", "config.py", "data.py", "evaluate.py", "models.py", "train.py", "windows.py", "text_length.py"]
+CODE = ["__init__.py", "checks.py", "config.py", "data.py", "evaluate.py", "models.py", "train.py", "windows.py", "text_length.py"]
 
 
 def shrink(args):
