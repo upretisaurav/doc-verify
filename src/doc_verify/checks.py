@@ -20,7 +20,7 @@ def ground_truth_check(pages, n_pairs=1500, data_root=None):
     document it was generated from (rebuilt with plan_documents): the labels served, the rules the true values break,
     the evidence values a reader must compare, and the token position by which they all appear in the OCR text
     (None if OCR lost one). Clean pages are checked against the evidence fields of their partner's kind.
-    Local only: it needs the sad_syn generator.
+    `data_root` points at the Colab bundle; without it, the local build is read.
     """
     from doc_verify.text_length import EVIDENCE_FIELDS, evidence_end_token, load_tokenizer
     from sad_syn.dataset import plan_documents
@@ -31,7 +31,7 @@ def ground_truth_check(pages, n_pairs=1500, data_root=None):
     jobs = {str(job['image_path']): job for job in plan_documents(n_pairs)}
     sad = pages[pages.source == 'sad_syn'].reset_index(drop=True)
     partner_kind = sad[sad.label == 'altered'].set_index('pair_id').inconsistency_type
-    dataset = PageDataset(sad)
+    dataset = PageDataset(sad, data_root)
     limit = tokens_covered(TEXT_WINDOWS)
 
     rows = []
