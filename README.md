@@ -51,8 +51,8 @@ The notebooks are submitted with their outputs saved. Each one starts with a set
   `apt` package is 4.1, so rebuilt OCR text differs slightly. The committed manifests and the bundle's text are the
   reference.
 - **Test-set lock.** The test split was locked in code (`TEST_SET_UNLOCKED` in `src/doc_verify/config.py`) until
-  the test plan (`reports/test_plan.md`) and thresholds were committed (`0f6f8ed`). It was then evaluated once
-  (`8f24b9f`, `e2849a9`).
+  the test plan (`reports/test_plan.md`) and thresholds were committed (`68d7058`). It was then evaluated once
+  (`ed4b83f`, `9d61007`).
 
 ## Local setup
 
