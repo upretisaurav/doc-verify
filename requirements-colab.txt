@@ -1,0 +1,11 @@
+# Installed on top of Colab's own runtime. torch, torchvision, numpy, pandas, scipy, Pillow and matplotlib are left
+# at Colab's versions (reinstalling them mid-session needs a runtime restart, and torch would pull a large CUDA build);
+# the notebooks print the versions in use. Versions used for the report: see reports/implementation_draft.md, Table 6.4.
+timm==1.0.30
+transformers==5.18.0
+scikit-learn==1.9.1
+statsmodels==0.15.0
+faker==40.41.0
+pytesseract==0.3.13
+opencv-python-headless==5.0.0.93
+datasets==5.1.0

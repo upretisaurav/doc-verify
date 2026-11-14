@@ -9,7 +9,7 @@ from doc_verify.text_length import CLIP_MODEL, CLIP_TEXT_TOKENS
 CLIP_CONTEXT = 77
 CLIP_TEXT_DIM = 512
 
-# windows overlap by 25 tokens, so any value up to 25 tokens long appears whole in at least one window
+# windows overlap by 25 tokens, so any value up to 26 tokens long appears whole in at least one window (tests/test_windows.py)
 WINDOW_STRIDE = 50
 
 # 8 overlapping windows (425 tokens) cover every SAD-Syn page; longer Tobacco pages are cut at 425 tokens

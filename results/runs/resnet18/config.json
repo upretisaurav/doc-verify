@@ -1,0 +1,15 @@
+{
+  "model": "resnet18",
+  "lambda_auth": 0,
+  "lambda_kind": 0,
+  "use_type": true,
+  "epochs": 30,
+  "patience": 5,
+  "batch_size": 32,
+  "lr_backbone": 0.001,
+  "lr_head": 0.001,
+  "weight_decay": 0.05,
+  "seed": 42,
+  "num_workers": 2,
+  "pretrained": true
+}

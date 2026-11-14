@@ -1,0 +1,12 @@
+{
+  "epoch": 4,
+  "train_type_loss": 0.0,
+  "train_auth_loss": 0.6996614806579821,
+  "train_kind_loss": 1.4025412364439531,
+  "train_total_loss": 2.1022027080709282,
+  "val_auth_auc": 0.5513777777777777,
+  "val_auth_accuracy": 0.5,
+  "val_auth_macro_f1": 0.3333333333333333,
+  "val_kind_macro_f1": 0.13333333333333333,
+  "val_selection": 0.5513777777777777
+}

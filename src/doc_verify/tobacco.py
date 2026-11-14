@@ -12,6 +12,9 @@ from sad_syn.ocr import mean_confidence, ocr_page, ocr_pool
 from sad_syn.templates import SPLITS, split_sizes
 
 TOBACCO_DIR = RAW_DIR / "tobacco3482"
+# the split depends on page order within each class, so the source copy and its revision are pinned
+TOBACCO_REPO = "maveriq/tobacco3482"
+TOBACCO_REVISION = "5ee64c0e7814be61d9a9a9e528f5bfc8d5f04273"
 TOBACCO_OUT_DIR = PROCESSED_DIR / "tobacco3482"
 
 DOC_TYPE_NAMES = {
@@ -26,6 +29,15 @@ DOC_TYPE_NAMES = {
     "Resume": "resume",
     "Scientific": "scientific",
 }
+
+
+def download_tobacco(out_dir=TOBACCO_DIR):
+    """Download the pinned revision of the Hugging Face copy (1.6 GB of parquet files), unless it is already there."""
+    if not any(Path(out_dir).glob("data/*.parquet")):
+        from huggingface_hub import snapshot_download
+
+        snapshot_download(TOBACCO_REPO, repo_type="dataset", revision=TOBACCO_REVISION, local_dir=out_dir)
+    return Path(out_dir)
 
 
 def load_tobacco(class_name=None):

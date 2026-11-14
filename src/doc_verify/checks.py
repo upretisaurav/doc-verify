@@ -14,7 +14,7 @@ def read_text(page, data_root=None):
     return (source_dir(page.source, data_root) / page.text_path).read_text(encoding='utf-8')
 
 
-def ground_truth_check(pages, n_pairs=1500):
+def ground_truth_check(pages, n_pairs=1500, data_root=None):
     """
     One row per SAD-Syn page of `pages`, read through PageDataset (the training loader's dataset), next to the
     document it was generated from (rebuilt with plan_documents): the labels served, the rules the true values break,
@@ -42,7 +42,7 @@ def ground_truth_check(pages, n_pairs=1500):
         kind = partner_kind[page.pair_id]
         fields = expected_ocr_fields(doc, template)
         evidence = {field: fields[field] for field in EVIDENCE_FIELDS[page.doc_type][kind]}
-        end = evidence_end_token(read_text(page), list(evidence.values()), tokenizer)
+        end = evidence_end_token(read_text(page, data_root), list(evidence.values()), tokenizer)
         broken = [rule for rule, ok in DOC_TYPES[page.doc_type].check_rules(doc).items() if not ok]
         rows.append({
             'page_index': item['page_index'],

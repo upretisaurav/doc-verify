@@ -7,6 +7,8 @@ PROCESSED_DIR = DATA_DIR / "processed"
 SAD_SYN_DIR = DATA_DIR / "sad_syn"
 MODELS_DIR = ROOT / "models"
 FIGURES_DIR = ROOT / "reports" / "figures"
+# small, committed outputs (manifests, predictions, run logs) that let the notebooks reproduce the report without a GPU
+RESULTS_DIR = ROOT / "results"
 
 IMAGE_SIZE = 224
 SPLIT = (0.70, 0.15, 0.15)
