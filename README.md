@@ -105,4 +105,8 @@ Requires Tesseract 5 on the system (`brew install tesseract`).
 
 ## Use of AI tools
 
-[TO WRITE: describe how AI tools were used in this project, as required by the course.]
+This project follows COMP6001's capstone AI policy: "AI-assisted completion with human evaluation".
+
+Claude (Anthropic) was used as a tutor: it explained concepts. Several design ideas came out of these discussions, such
+as the split by template and the rule-checker baseline. Claude also wrote parts of the code and notebooks. I made the
+design decisions, and I reviewed, ran and edited all of it.
